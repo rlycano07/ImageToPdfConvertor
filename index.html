@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Converter</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+        margin: 0;
+      }
+
+      .container {
+        text-align: center;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        max-width: 600px;
+        min-width: 400px;
+        height: 370px;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+        line-height: 40px;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .custom-file-upload {
+        padding: 10px 0px;
+        background-color: #e44202;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        display: inline-block;
+        margin-bottom: 20px;
+        font-size: 16px;
+        line-height: 42px;
+        width: 245px;
+      }
+
+      .custom-file-upload:hover {
+        background-color: #9b2e02;
+      }
+
+      button {
+        padding: 10px 0px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 42px;
+        width: 245px;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .language-toggle,
+      .pdf-option {
+        margin-top: 20px;
+        height: 60px;
+      }
+
+      .language-toggle {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        justify-content: center;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 34px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 34px;
+        width: 34px;
+        left: 0;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      }
+
+      input:checked + .slider {
+        background-color: #e44202;
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
+
+      .preview-container {
+        margin-top: 20px;
+        text-align: left;
+      }
+
+      .preview-container .preview-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .preview-container img {
+        max-width: 100px;
+        margin-right: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .preview-container .filename {
+        font-size: 14px;
+        color: #555;
+      }
+
+      .pdf-option label {
+        margin-right: 20px;
+      }
+
+      #languageText {
+        line-height: 30px;
+        text-align: center;
+        margin: 0px 10px;
+        display: block;
+        width: 80px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 id="title">PDF Converter</h1>
+      <label for="fileInput" class="custom-file-upload">
+        <i class="fas fa-upload"></i> <span id="uploadText">Choose files</span>
+      </label>
+      <input
+        type="file"
+        id="fileInput"
+        multiple
+        accept=".png, .jpg, .jpeg"
+        onchange="showPreview()"
+      />
+      <div class="preview-container" id="previewContainer"></div>
+
+      <div class="pdf-option">
+        <label style="display: none">
+          <input type="radio" name="pdfOption" value="separate" checked />
+          Separate PDFs
+        </label>
+        <label id="allInOneText">
+          <input type="radio" name="pdfOption" value="single" />
+          Combine all in one PDF file
+        </label>
+      </div>
+
+      <button id="convertButton" onclick="convertToPDF()">
+        <i class="fas fa-file-pdf"></i> Convert to PDF
+      </button>
+      <div class="language-toggle">
+        <label class="switch">
+          <input
+            type="checkbox"
+            id="languageSwitch"
+            onchange="toggleLanguage()"
+          />
+          <span class="slider"></span>
+        </label>
+        <span id="languageText">English</span>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script>
+      const translations = {
+        en: {
+          title: "PDF Converter",
+          convertButton: "Convert to PDF",
+          fileInputPlaceholder: "Choose files",
+          allInOneText: "Combine all in one PDF file",
+          languageText: "English",
+        },
+        ne: {
+          title: "पीडीएफ कन्भर्टर",
+          convertButton: "पीडीएफमा रूपान्तरण गर्नुहोस्",
+          fileInputPlaceholder: "फाइलहरू छान्नुहोस्",
+          allInOneText: "एउटै फाइलमा सबै मिलाउने",
+          languageText: "नेपाली",
+        },
+      };
+
+      function changeLanguage(language) {
+        document.getElementById("title").textContent =
+          translations[language].title;
+        document.getElementById(
+          "convertButton"
+        ).innerHTML = `<i class="fas fa-file-pdf"></i> ${translations[language].convertButton}`;
+        document.getElementById("uploadText").textContent =
+          translations[language].fileInputPlaceholder;
+        document.getElementById("languageText").textContent =
+          translations[language].languageText;
+        document.getElementById(
+          "allInOneText"
+        ).innerHTML = `<input type="radio" name="pdfOption" value="single" />
+          ${translations[language].allInOneText}`;
+      }
+
+      function toggleLanguage() {
+        const languageSwitch = document.getElementById("languageSwitch");
+        const language = languageSwitch.checked ? "ne" : "en";
+        changeLanguage(language);
+      }
+
+      function showPreview() {
+        const fileInput = document.getElementById("fileInput");
+        const previewContainer = document.getElementById("previewContainer");
+        previewContainer.innerHTML = ""; // Clear any existing previews
+
+        if (fileInput.files) {
+          for (const file of fileInput.files) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+              const img = document.createElement("img");
+              img.src = event.target.result;
+
+              const filename = document.createElement("div");
+              filename.className = "filename";
+              filename.textContent = file.name;
+
+              const previewItem = document.createElement("div");
+              previewItem.className = "preview-item";
+              previewItem.appendChild(img);
+              previewItem.appendChild(filename);
+
+              previewContainer.appendChild(previewItem);
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+      }
+
+      async function convertToPDF() {
+        const fileInput = document.getElementById("fileInput");
+        const pdfOption = document.querySelector(
+          'input[name="pdfOption"]:checked'
+        ).value;
+
+        if (fileInput.files.length === 0) {
+          alert("Please select one or more files first.");
+          return;
+        }
+
+        if (pdfOption === "single") {
+          await convertToSinglePDF(fileInput.files);
+        } else {
+          await convertToMultiplePDFs(fileInput.files);
+        }
+      }
+
+      async function convertToSinglePDF(files) {
+        const pdfDoc = await PDFLib.PDFDocument.create();
+
+        for (const file of files) {
+          const arrayBuffer = await file.arrayBuffer();
+
+          let image;
+          if (file.type === "image/jpeg" || file.type === "image/jpg") {
+            image = await pdfDoc.embedJpg(arrayBuffer);
+          } else if (file.type === "image/png") {
+            image = await pdfDoc.embedPng(arrayBuffer);
+          } else {
+            alert(`Unsupported file type: ${file.type}`);
+            return;
+          }
+
+          const page = pdfDoc.addPage([595.28, 841.89]); // A4 size in points
+          const imageDims = image.scale(0.5); // Scaling image to fit within A4, adjust as needed
+          page.drawImage(image, {
+            x: (page.getWidth() - imageDims.width) / 2, // Center horizontally
+            y: (page.getHeight() - imageDims.height) / 2, // Center vertically
+            width: imageDims.width,
+            height: imageDims.height,
+          });
+        }
+
+        const pdfBytes = await pdfDoc.save();
+        download(pdfBytes, "combined.pdf", "application/pdf");
+      }
+
+      async function convertToMultiplePDFs(files) {
+        for (const file of files) {
+          const pdfDoc = await PDFLib.PDFDocument.create();
+          const arrayBuffer = await file.arrayBuffer();
+
+          let image;
+          if (file.type === "image/jpeg" || file.type === "image/jpg") {
+            image = await pdfDoc.embedJpg(arrayBuffer);
+          } else if (file.type === "image/png") {
+            image = await pdfDoc.embedPng(arrayBuffer);
+          } else {
+            alert(`Unsupported file type: ${file.type}`);
+            continue;
+          }
+
+          const page = pdfDoc.addPage([595.28, 841.89]); // A4 size in points
+          const imageDims = image.scale(0.5); // Scaling image to fit within A4, adjust as needed
+          page.drawImage(image, {
+            x: (page.getWidth() - imageDims.width) / 2, // Center horizontally
+            y: (page.getHeight() - imageDims.height) / 2, // Center vertically
+            width: imageDims.width,
+            height: imageDims.height,
+          });
+
+          const pdfBytes = await pdfDoc.save();
+          download(
+            pdfBytes,
+            file.name.replace(/\.[^/.]+$/, "") + ".pdf",
+            "application/pdf"
+          );
+        }
+      }
+
+      function download(data, filename, type) {
+        const blob = new Blob([data], { type: type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }, 0);
+      }
+    </script>
+  </body>
+</html>
